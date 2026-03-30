@@ -158,7 +158,7 @@ A **judge-to-agent correction loop** is also wired in: if a case scores below 0.
 | Added runtime schema injection | Removed wrong-column tool failures entirely |
 | Multi-filter `filters` param | Fixed multi-condition query failures (ACV, pending renewal) |
 | Cross-model judge (Claude) | Eliminated self-grading inflation; more consistent scoring |
-| Judge-to-agent correction loop | Baseline 76.5% → 90.0%; v2 85.0% → 98.0% |
+| Judge-to-agent correction loop | +13pp across all iterations (e.g. v2 went from 85% → 97%) |
 | CoT `<reasoning>` block | Marginal gain on hard cases; adds latency (~3s per case) |
 
 **Trade-offs:** v3 (CoT) adds ~4s latency per case over v2 (9.7s vs 5.9s avg). On the final run v3 edged out v2 (98% vs 97%), though across runs they trade places — both are strong production configs.

@@ -116,7 +116,7 @@ def query_csv(
                     except ValueError as e:
                         return {"status": "error", "message": str(e)}
 
-        # Legacy single-filter (kept for backward compat)
+        # Single-filter fallback
         elif filter_column and filter_value:
             try:
                 df = _apply_filter(df, filter_column, filter_value, filter_operator)

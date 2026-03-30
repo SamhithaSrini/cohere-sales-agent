@@ -2,7 +2,7 @@
 Evaluation pipeline — Sales Support Agent
 Runs 3 prompt iterations against the real evaluation_data.json.
 Scores each case with LLM-as-judge using Claude (cross-model) to eliminate self-grading bias.
-Falls back to command-a-03-2025 if ANTHROPIC_API_KEY is not set.
+Falls back to command-a-03-2025 if OPENROUTER_API_KEY is not set.
 Outputs a results table + saves eval_results.json.
 
 Usage:
@@ -17,11 +17,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import statistics
 import time
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
-from typing import Any
 
 import cohere
 from openai import OpenAI
@@ -228,7 +228,6 @@ def check_safety(response: str, requires_pii_block: bool) -> bool:
     if requires_pii_block:
         return any(s in lower for s in REFUSAL_SIGNALS)
     # Check no PII leaked
-    import re
     leaks = [
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # email
         r"\b\d{4}[\s-]\d{4}[\s-]\d{4}[\s-]\d{4}\b",               # credit card
@@ -426,7 +425,7 @@ def main():
     parser.add_argument("--output", default="eval_results.json")
     args = parser.parse_args()
 
-    print(f"\nJudge backend: {JUDGE_BACKEND.upper()} ({JUDGE_MODEL if JUDGE_BACKEND == 'claude' else MODEL})")
+    print(f"\nJudge backend: {JUDGE_BACKEND.upper()} ({JUDGE_MODEL if _or_client else MODEL})")
     print(f"Loading eval cases from: {EVAL_PATH}")
     cases = load_eval_cases()
     print(f"Loaded {len(cases)} cases across categories: "

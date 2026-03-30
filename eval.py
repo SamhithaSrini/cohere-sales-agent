@@ -1,7 +1,8 @@
 """
 Evaluation pipeline — Sales Support Agent
 Runs 3 prompt iterations against the real evaluation_data.json.
-Scores each case with LLM-as-judge using command-a-03-2025.
+Scores each case with LLM-as-judge using Claude (cross-model) to eliminate self-grading bias.
+Falls back to command-a-03-2025 if ANTHROPIC_API_KEY is not set.
 Outputs a results table + saves eval_results.json.
 
 Usage:
@@ -23,11 +24,22 @@ from pathlib import Path
 from typing import Any
 
 import cohere
+from openai import OpenAI
 
 from agent import run_agent, _build_system_prompt, TOOLS, MODEL
 
 co = cohere.ClientV2(os.environ["COHERE_API_KEY"])
 EVAL_PATH = Path(os.environ.get("EVAL_PATH", "evaluation_data.json"))
+
+# Cross-model judge via OpenRouter: routes to Claude to eliminate self-grading bias.
+# Falls back to Cohere judge if OPENROUTER_API_KEY is not set.
+_openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+_or_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=_openrouter_key,
+) if _openrouter_key else None
+JUDGE_MODEL = "anthropic/claude-3.5-haiku"  # fast + cheap; swap to anthropic/claude-3.5-sonnet for higher quality
+JUDGE_BACKEND = "openrouter/claude" if _or_client else "cohere"
 
 
 # ── Data structures ───────────────────────────────────────────────────────────
@@ -166,16 +178,29 @@ Return exactly:
 
     for attempt in range(5):
         try:
-            resp = co.chat(model=MODEL, messages=[{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": prompt}])
+            if _or_client:
+                # Cross-model judge via OpenRouter → Claude (eliminates self-grading bias)
+                resp = _or_client.chat.completions.create(
+                    model=JUDGE_MODEL,
+                    max_tokens=256,
+                    messages=[
+                        {"role": "system", "content": JUDGE_SYSTEM},
+                        {"role": "user", "content": prompt},
+                    ],
+                )
+                text = resp.choices[0].message.content
+            else:
+                # Fallback: same-model judge (Cohere) when no OpenRouter key is set
+                resp = co.chat(model=MODEL, messages=[{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": prompt}])
+                text = "".join(b.text for b in (resp.message.content or []) if hasattr(b, "text"))
             break
         except Exception as e:
-            if "429" in str(e) or "TooManyRequests" in type(e).__name__:
+            if "429" in str(e) or "TooManyRequests" in type(e).__name__ or "rate_limit" in str(e).lower():
                 wait = 15 * (attempt + 1)
                 print(f"\n  [rate-limit] judge sleeping {wait}s (attempt {attempt+1})")
                 time.sleep(wait)
             else:
                 raise
-    text = "".join(b.text for b in (resp.message.content or []) if hasattr(b, "text"))
     text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     try:
         scores = json.loads(text)
@@ -377,7 +402,8 @@ def main():
     parser.add_argument("--output", default="eval_results.json")
     args = parser.parse_args()
 
-    print(f"\nLoading eval cases from: {EVAL_PATH}")
+    print(f"\nJudge backend: {JUDGE_BACKEND.upper()} ({JUDGE_MODEL if JUDGE_BACKEND == 'claude' else MODEL})")
+    print(f"Loading eval cases from: {EVAL_PATH}")
     cases = load_eval_cases()
     print(f"Loaded {len(cases)} cases across categories: "
           + ", ".join(f"{c}({sum(1 for x in cases if x.category==c)})" for c in sorted({x.category for x in cases})))

@@ -69,10 +69,30 @@ def _load() -> pd.DataFrame:
 
 # ── Tool implementations ──────────────────────────────────────────────────────
 
+def _apply_filter(df: pd.DataFrame, column: str, value: str, operator: str) -> pd.DataFrame:
+    """Apply a single filter condition to a dataframe."""
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' does not exist. Available: {df.columns.tolist()}")
+    col = df[column]
+    v = value.strip()
+    if operator == "equals":
+        return df[col.astype(str).str.lower() == v.lower()]
+    elif operator == "contains":
+        return df[col.astype(str).str.lower().str.contains(v.lower(), na=False)]
+    elif operator == "greater_than":
+        return df[pd.to_numeric(col, errors="coerce") > float(v)]
+    elif operator == "less_than":
+        return df[pd.to_numeric(col, errors="coerce") < float(v)]
+    elif operator == "not_equals":
+        return df[col.astype(str).str.lower() != v.lower()]
+    return df
+
+
 def query_csv(
     filter_column: str = "",
     filter_value: str = "",
     filter_operator: str = "equals",
+    filters: list[dict] | None = None,
     columns: list[str] | None = None,
     sort_by: str = "",
     sort_ascending: bool = True,
@@ -86,25 +106,22 @@ def query_csv(
     try:
         df = _safe_df(_load().copy())
 
-        # Filter
-        if filter_column and filter_value:
-            if filter_column not in df.columns:
-                return {
-                    "status": "error",
-                    "message": f"Column '{filter_column}' does not exist. Available: {df.columns.tolist()}",
-                }
-            col = df[filter_column]
-            v = filter_value.strip()
-            if filter_operator == "equals":
-                df = df[col.astype(str).str.lower() == v.lower()]
-            elif filter_operator == "contains":
-                df = df[col.astype(str).str.lower().str.contains(v.lower(), na=False)]
-            elif filter_operator == "greater_than":
-                df = df[pd.to_numeric(col, errors="coerce") > float(v)]
-            elif filter_operator == "less_than":
-                df = df[pd.to_numeric(col, errors="coerce") < float(v)]
-            elif filter_operator == "not_equals":
-                df = df[col.astype(str).str.lower() != v.lower()]
+        # Multi-filter (AND logic): accepts [{column, value, operator}, ...]
+        if filters:
+            for f in filters:
+                col, val, op = f.get("column", ""), f.get("value", ""), f.get("operator", "equals")
+                if col and val:
+                    try:
+                        df = _apply_filter(df, col, val, op)
+                    except ValueError as e:
+                        return {"status": "error", "message": str(e)}
+
+        # Legacy single-filter (kept for backward compat)
+        elif filter_column and filter_value:
+            try:
+                df = _apply_filter(df, filter_column, filter_value, filter_operator)
+            except ValueError as e:
+                return {"status": "error", "message": str(e)}
 
         # Search inside list-valued column (e.g. custom_features)
         if search_in_list_column and search_term:
@@ -261,6 +278,9 @@ TOOLS = [
                 "To search inside custom_features (comma-separated), use "
                 "search_in_list_column='custom_features' and search_term='HIPAA Compliance'. "
                 "For totals, set filter first then aggregation='sum'. "
+                "For multiple conditions (e.g. Enterprise AND active), use the 'filters' list: "
+                "[{\"column\": \"plan_tier\", \"value\": \"Enterprise\", \"operator\": \"equals\"}, "
+                "{\"column\": \"status\", \"value\": \"active\", \"operator\": \"equals\"}]. "
                 "Exact column names: subscription_id, company_name, plan_tier, monthly_revenue, "
                 "annual_revenue, start_date, end_date, status, seats_purchased, seats_used, "
                 "industry, payment_method, auto_renew, last_payment_date, outstanding_balance, "
@@ -270,7 +290,20 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "filter_column": {"type": "string"},
+                    "filters": {
+                        "type": "array",
+                        "description": "List of AND-combined filter conditions. Use this for multi-condition queries.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "column": {"type": "string"},
+                                "value": {"type": "string"},
+                                "operator": {"type": "string", "enum": ["equals", "contains", "greater_than", "less_than", "not_equals"]},
+                            },
+                            "required": ["column", "value"],
+                        },
+                    },
+                    "filter_column": {"type": "string", "description": "Single filter column (use 'filters' list for multiple conditions)."},
                     "filter_value": {"type": "string"},
                     "filter_operator": {
                         "type": "string",
@@ -364,6 +397,7 @@ If asked for any of the above: REFUSE immediately. Do NOT attempt to retrieve it
 • Seat utilization = seats_used / seats_purchased × 100.
 • For "pending renewal" / "at risk" questions, also check auto_renew=FALSE.
 • Aggregation results include matched_rows (customer count) and matched_companies (their names). Always state both the count AND list the company names in your answer.
+• For multi-condition queries (e.g. Enterprise AND active, pending_renewal AND auto_renew=false), use the filters list parameter — never make two separate calls and guess at the intersection.
 </behavior>
 {"<reasoning>Before calling any tool: (1) What data do I need? (2) Which filter/aggregation? (3) Any PII concern? Then act.</reasoning>" if include_cot else ""}
 <examples>

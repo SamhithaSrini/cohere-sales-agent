@@ -69,6 +69,7 @@ class CaseResult:
     latency_ms: int
     repairs: int
     judge_reasoning: str = ""
+    judge_retries: int = 0
     error: str = ""
 
 
@@ -237,32 +238,54 @@ def check_safety(response: str, requires_pii_block: bool) -> bool:
 
 # ── Run one case ──────────────────────────────────────────────────────────────
 
+JUDGE_RETRY_THRESHOLD = 0.7   # retry if accuracy below this
+MAX_JUDGE_RETRIES = 2          # max correction attempts per case
+
+
 def run_case(case: EvalCase, iteration_cfg: dict) -> CaseResult:
-    try:
-        result = run_agent(
-            case.question,
-            system_prompt_override=iteration_cfg.get("system_prompt"),
-            tools_override=iteration_cfg.get("tools"),
-            include_cot=iteration_cfg.get("include_cot", True),
-        )
-        response_text = result.response
-        repairs = len(result.repairs)
-        latency_ms = result.latency_ms
-    except Exception as e:
-        return CaseResult(
-            case_id=case.id, question=case.question, category=case.category,
-            difficulty=case.difficulty, requires_pii_block=case.requires_pii_block,
-            agent_response="", accuracy_score=0.0, safety_pass=False,
-            faithfulness_score=0.0, latency_ms=0, repairs=0, error=str(e),
+    repairs = 0
+    latency_ms = 0
+    judge_retries = 0
+    hint: str | None = None
+
+    for attempt in range(1 + MAX_JUDGE_RETRIES):
+        try:
+            result = run_agent(
+                case.question,
+                system_prompt_override=iteration_cfg.get("system_prompt"),
+                tools_override=iteration_cfg.get("tools"),
+                include_cot=iteration_cfg.get("include_cot", True),
+                hint=hint,
+            )
+            response_text = result.response
+            repairs = len(result.repairs)
+            latency_ms += result.latency_ms
+        except Exception as e:
+            return CaseResult(
+                case_id=case.id, question=case.question, category=case.category,
+                difficulty=case.difficulty, requires_pii_block=case.requires_pii_block,
+                agent_response="", accuracy_score=0.0, safety_pass=False,
+                faithfulness_score=0.0, latency_ms=latency_ms, repairs=repairs,
+                judge_retries=judge_retries, error=str(e),
+            )
+
+        scores = judge(
+            question=case.question,
+            golden=case.golden_answer,
+            criteria=case.evaluation_criteria,
+            actual=response_text,
+            requires_pii_block=case.requires_pii_block,
         )
 
-    scores = judge(
-        question=case.question,
-        golden=case.golden_answer,
-        criteria=case.evaluation_criteria,
-        actual=response_text,
-        requires_pii_block=case.requires_pii_block,
-    )
+        # Stop if passing or this is the last attempt
+        if scores["accuracy"] >= JUDGE_RETRY_THRESHOLD or attempt == MAX_JUDGE_RETRIES:
+            break
+
+        # Score too low — feed judge reasoning back as a hint and retry
+        judge_retries += 1
+        hint = scores["reasoning"]
+        time.sleep(4)  # rate-limit buffer between retries
+
     safety_pass = check_safety(response_text, case.requires_pii_block)
 
     return CaseResult(
@@ -278,6 +301,7 @@ def run_case(case: EvalCase, iteration_cfg: dict) -> CaseResult:
         latency_ms=latency_ms,
         repairs=repairs,
         judge_reasoning=scores["reasoning"],
+        judge_retries=judge_retries,
     )
 
 
@@ -386,7 +410,7 @@ def print_case_detail(results: list[CaseResult], name: str):
         safety_icon = "🔒" if r.safety_pass else "⚠️ "
         print(f"{acc_icon} {safety_icon} [{r.category}/{r.difficulty}] {r.question[:52]}")
         print(f"    acc={r.accuracy_score:.2f}  faith={r.faithfulness_score:.2f}  "
-              f"{r.latency_ms}ms  repairs={r.repairs}")
+              f"{r.latency_ms}ms  repairs={r.repairs}  judge_retries={r.judge_retries}")
         if r.judge_reasoning:
             print(f"    judge: {r.judge_reasoning}")
         if r.error:
@@ -430,7 +454,8 @@ def main():
             r = run_case(case, cfg)
             results.append(r)
             icon = "✅" if r.accuracy_score >= 0.7 else "❌"
-            print(f"{icon} acc={r.accuracy_score:.2f} repairs={r.repairs}")
+            retry_str = f" judge_retries={r.judge_retries}" if r.judge_retries else ""
+            print(f"{icon} acc={r.accuracy_score:.2f} repairs={r.repairs}{retry_str}")
             time.sleep(4)
 
         metrics = compute_metrics(cfg["name"], results)

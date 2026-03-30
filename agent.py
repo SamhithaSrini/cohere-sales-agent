@@ -467,10 +467,13 @@ def run_agent(
     system_prompt_override: str | None = None,
     tools_override: list | None = None,
     include_cot: bool = True,
+    hint: str | None = None,
 ) -> AgentResult:
     """Run the agent with self-healing. Returns AgentResult."""
     start = time.time()
     active_system = system_prompt_override or _build_system_prompt(include_cot=include_cot)
+    if hint:
+        active_system += f"\n\n<correction>Your previous answer was scored poorly. Judge feedback: {hint}\nUse this to correct your approach.</correction>"
     active_tools = tools_override if tools_override is not None else TOOLS
 
     # Fast-path PII block

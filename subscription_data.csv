@@ -1,0 +1,16 @@
+subscription_id,company_name,plan_tier,monthly_revenue,annual_revenue,start_date,end_date,status,seats_purchased,seats_used,industry,primary_contact,payment_method,auto_renew,last_payment_date,outstanding_balance,support_tier,implementation_date,custom_features
+SUB-25789,Acme Corp,Enterprise,15000,162000,2023-01-15,2024-01-15,active,500,487,Manufacturing,john.doe@acme.com,wire_transfer,TRUE,2024-09-15,0,premium,2023-01-20,"SSO, API Access, Custom Reports"
+SUB-44557,TechStart Inc,Professional,3500,37800,2023-03-01,2024-03-01,active,50,45,Technology,sarah.j@techstart.io,credit_card,TRUE,2024-09-01,0,standard,2023-03-05,API Access
+SUB-15022,Global Finance Ltd,Enterprise,25000,270000,2022-06-15,2025-06-15,active,1000,876,Finance,cfo@globalfinance.com,wire_transfer,TRUE,2024-09-15,0,premium,2022-06-20,"SSO, API Access, Custom Reports, Dedicated Instance"
+SUB-13673,HealthPlus Medical,Professional,4200,45360,2023-07-01,2024-07-01,churned,75,58,Healthcare,admin@healthplus.med,credit_card,FALSE,2024-06-01,4200,standard,2023-07-10,HIPAA Compliance
+SUB-23531,RetailChain Co,Basic,800,8640,2024-01-10,2025-01-10,active,15,12,Retail,it@retailchain.com,credit_card,TRUE,2024-09-10,0,basic,2024-01-15,
+SUB-35235,EduTech Academy,Professional,2800,30240,2023-09-01,2024-09-01,active,40,38,Education,director@edutech.edu,invoice,TRUE,2024-08-25,2800,standard,2023-09-08,SSO
+SUB-11231,Legal Partners LLP,Enterprise,18000,194400,2023-02-01,2024-02-01,pending_renewal,250,203,Legal,partners@legalllp.com,wire_transfer,FALSE,2024-08-01,18000,premium,2023-02-10,"SSO, API Access, Custom Reports, Audit Logs"
+SUB-09123,CloudBase Systems,Professional,5000,54000,2022-11-15,2023-11-15,churned,80,45,Technology,ops@cloudbase.io,credit_card,FALSE,2023-10-15,5000,standard,2022-11-20,API Access
+SUB-23177,Manufacturing Pro,Basic,1200,12960,2024-02-01,2025-02-01,active,25,22,Manufacturing,john.smith@mfgpro.com,credit_card,TRUE,2024-09-01,0,basic,2024-02-05,
+SUB-89009,Pharma Innovations,Enterprise,30000,324000,2023-05-01,2026-05-01,active,800,756,Healthcare,compliance@pharmainno.com,wire_transfer,TRUE,2024-09-01,0,premium,2023-05-15,"SSO, API Access, Custom Reports, HIPAA Compliance, Dedicated Instance"
+SUB-12898,Finance Advisors,Professional,3200,34560,2024-03-15,2025-03-15,active,45,41,Finance,admin@financeadv.com,invoice,TRUE,2024-09-15,0,standard,2024-03-20,API Access
+SUB-85734,SmallBiz Tools,Basic,600,6480,2023-12-01,2024-12-01,active,10,9,Technology,owner@smallbiz.com,credit_card,TRUE,2024-09-01,0,basic,2023-12-05,
+SUB-85684,MegaCorp International,Enterprise,45000,486000,2022-01-01,2025-01-01,active,2000,1834,Manufacturing,enterprise@megacorp.com,wire_transfer,TRUE,2024-09-01,0,premium,2022-01-10,"SSO, API Access, Custom Reports, Dedicated Instance, Priority Support"
+SUB-45772,Startup Accelerator,Professional,2500,27000,2024-04-01,2025-04-01,trial,30,18,Technology,growth@accelerator.io,credit_card,FALSE,2024-04-01,0,basic,2024-04-01,
+SUB-34562,City Hospital Network,Enterprise,22000,237600,2023-08-15,2024-08-15,pending_renewal,600,547,Healthcare,it.director@cityhospital.org,wire_transfer,FALSE,2024-07-15,22000,premium,2023-08-25,"SSO, HIPAA Compliance, Custom Reports, Audit Logs"

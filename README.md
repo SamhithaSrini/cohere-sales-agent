@@ -1,6 +1,6 @@
 # Sales Support Agent — Cohere SDK
 
-A sales support agent built on `command-a-03-2025` that answers internal business questions about subscription data, enforces PII guardrails at three independent layers, self-heals on tool failures as well as the LLM-as-Judge findings, and supports multi-turn conversations with context memory.
+A sales support agent built on `command-a-03-2025` that answers internal business questions about subscription data, enforces PII guardrails at three independent layers, self-heals on tool failures as well as the LLM-as-Judge `Claude 3.5 Haiku` findings, and supports multi-turn conversations with context memory.
 
 ---
 

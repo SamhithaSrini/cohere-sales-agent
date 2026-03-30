@@ -448,6 +448,9 @@ def _execute_tool(tc, attempt: int = 0) -> tuple[str, bool]:
 
 # ── Agent loop ────────────────────────────────────────────────────────────────
 
+MAX_CONVERSATION_TURNS = 10  # keep last N user/assistant pairs to avoid context bloat
+
+
 @dataclass
 class AgentResult:
     response: str
@@ -456,9 +459,12 @@ class AgentResult:
     steps: int
     latency_ms: int
     pii_blocked: bool = False
+    conversation_history: list = None
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d.pop("conversation_history", None)
+        return d
 
 
 def run_agent(
@@ -468,6 +474,7 @@ def run_agent(
     tools_override: list | None = None,
     include_cot: bool = True,
     hint: str | None = None,
+    conversation_history: list | None = None,
 ) -> AgentResult:
     """Run the agent with self-healing. Returns AgentResult."""
     start = time.time()
@@ -484,12 +491,18 @@ def run_agent(
             "Please use your CRM or contact your data team through the approved data access process."
         )
         _log_repair({"event": "pii_blocked", "question": user_message[:120]})
+        history = list(conversation_history or [])
+        history.append({"role": "user", "content": user_message})
+        history.append({"role": "assistant", "content": refusal})
         return AgentResult(
             response=refusal, tool_calls=[], repairs=[], steps=0,
             latency_ms=int((time.time() - start) * 1000), pii_blocked=True,
+            conversation_history=history[-MAX_CONVERSATION_TURNS * 2:],
         )
 
-    messages: list = [{"role": "user", "content": user_message}]
+    # Build messages: prior conversation context + new user message
+    prior = list(conversation_history or [])
+    messages: list = prior + [{"role": "user", "content": user_message}]
     all_tool_calls: list = []
     all_repairs: list = []
     repair_attempts: dict = {}  # tc_id → int
@@ -517,9 +530,14 @@ def run_agent(
             text = "".join(
                 b.text for b in (response.message.content or []) if hasattr(b, "text")
             )
+            # Store only user/assistant pairs for conversation memory (no tool messages)
+            history = list(prior)
+            history.append({"role": "user", "content": user_message})
+            history.append({"role": "assistant", "content": text})
             return AgentResult(
                 response=text, tool_calls=all_tool_calls, repairs=all_repairs,
                 steps=step + 1, latency_ms=int((time.time() - start) * 1000),
+                conversation_history=history[-MAX_CONVERSATION_TURNS * 2:],
             )
 
         messages.append(response.message)
@@ -574,10 +592,14 @@ def run_agent(
                 ),
             })
 
+    fallback = "Unable to complete request within step limit. Please rephrase."
+    history = list(prior)
+    history.append({"role": "user", "content": user_message})
+    history.append({"role": "assistant", "content": fallback})
     return AgentResult(
-        response="Unable to complete request within step limit. Please rephrase.",
-        tool_calls=all_tool_calls, repairs=all_repairs,
+        response=fallback, tool_calls=all_tool_calls, repairs=all_repairs,
         steps=MAX_AGENT_STEPS, latency_ms=int((time.time() - start) * 1000),
+        conversation_history=history[-MAX_CONVERSATION_TURNS * 2:],
     )
 
 
@@ -588,9 +610,10 @@ if __name__ == "__main__":
     verbose = "--verbose" in sys.argv
     print("=" * 60)
     print(f"Sales Support Agent  |  Model: {MODEL}")
-    print(f"Data: {DATA_PATH}  |  type 'quit' to exit")
+    print(f"Data: {DATA_PATH}  |  type 'quit' to exit, 'clear' to reset conversation")
     print("=" * 60)
 
+    history = []
     while True:
         try:
             user_input = input("\nYou: ").strip()
@@ -601,9 +624,15 @@ if __name__ == "__main__":
             continue
         if user_input.lower() in ("quit", "exit", "q"):
             break
+        if user_input.lower() == "clear":
+            history = []
+            print("Conversation cleared.")
+            continue
 
-        result = run_agent(user_input, verbose=verbose)
+        result = run_agent(user_input, verbose=verbose, conversation_history=history)
+        history = result.conversation_history or []
         print(f"\nAgent: {result.response}")
         if verbose:
             print(f"\n[steps={result.steps} | {result.latency_ms}ms | "
-                  f"repairs={len(result.repairs)} | pii_blocked={result.pii_blocked}]")
+                  f"repairs={len(result.repairs)} | pii_blocked={result.pii_blocked} | "
+                  f"history={len(history)} msgs]")

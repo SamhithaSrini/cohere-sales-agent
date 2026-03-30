@@ -56,6 +56,10 @@ To verify the agent wasn't overfit to the original dataset, we ran the same eval
 The agent generalizes — accuracy holds within ±1.5pp on unseen data.
 
 ---
+## System Design
+
+<img width="399" height="514" alt="Screenshot 2026-03-29 at 11 44 12 PM" src="https://github.com/user-attachments/assets/85b20d0d-5438-4188-900f-9fe9d08753fb" />
+
 
 ## Prompt Engineering Approach
 

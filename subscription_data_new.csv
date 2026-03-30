@@ -1,0 +1,16 @@
+subscription_id,company_name,plan_tier,monthly_revenue,annual_revenue,start_date,end_date,status,seats_purchased,seats_used,industry,primary_contact,payment_method,auto_renew,last_payment_date,outstanding_balance,support_tier,implementation_date,custom_features
+SUB-10001,Apex Dynamics,Enterprise,18000,216000,2024-01-15,2025-01-15,active,600,598,Finance,alice.m@apexdynamics.com,credit_card,TRUE,2025-02-15,0,premium,2024-01-20,"SSO, API Access, Custom Reports, Dedicated Instance"
+SUB-10002,ByteWave Corp,Professional,4500,54000,2024-03-01,2025-03-01,active,80,79,Technology,bob.k@bytewave.io,credit_card,TRUE,2025-02-01,0,standard,2024-03-05,API Access
+SUB-10003,ClearPath Health,Enterprise,28000,336000,2024-02-01,2025-02-01,active,1000,820,Healthcare,carol.t@clearpath.com,wire_transfer,TRUE,2025-02-01,0,premium,2024-02-05,"SSO, HIPAA Compliance, Custom Reports"
+SUB-10004,DataSync Ltd,Basic,900,10800,2024-06-01,2025-06-01,active,20,8,Technology,david.r@datasync.com,credit_card,FALSE,2025-02-01,0,basic,2024-06-05,
+SUB-10005,EverGreen Retail,Professional,3800,45600,2023-05-01,2024-05-01,churned,60,22,Retail,emma.s@evergreen.com,credit_card,FALSE,2024-04-01,0,standard,2023-05-05,
+SUB-10006,FrontLine Defense,Enterprise,22000,264000,2024-01-01,2025-01-01,active,800,800,Government,frank.b@frontline.gov,wire_transfer,TRUE,2025-02-01,0,premium,2024-01-05,"SSO, API Access, Custom Reports, Dedicated Instance, HIPAA Compliance"
+SUB-10007,GreenField Farms,Basic,600,7200,2025-01-01,2025-04-01,trial,10,4,Agriculture,grace.h@greenfield.com,credit_card,FALSE,2025-01-01,0,basic,2025-01-05,
+SUB-10008,HorizonBank,Enterprise,35000,420000,2024-01-01,2025-01-01,active,1500,1100,Finance,henry.w@horizonbank.com,wire_transfer,TRUE,2025-02-01,0,premium,2024-01-10,"SSO, API Access, Custom Reports, Dedicated Instance"
+SUB-10009,InnovateTech,Professional,2800,33600,2024-04-01,2025-04-01,active,40,15,Technology,iris.p@innovatetech.com,credit_card,TRUE,2025-02-01,0,standard,2024-04-05,
+SUB-10010,JumpStart Edu,Professional,3200,38400,2024-04-01,2025-04-01,pending_renewal,70,65,Education,james.c@jumpstart.edu,credit_card,FALSE,2025-01-01,12000,standard,2024-04-05,API Access
+SUB-10011,KineticLabs,Professional,5500,66000,2024-02-01,2025-02-01,active,90,88,Biotech,kate.l@kineticlabs.com,wire_transfer,TRUE,2025-02-01,0,premium,2024-02-05,"API Access, Custom Reports"
+SUB-10012,LegalEdge Inc,Enterprise,20000,240000,2024-03-01,2025-03-01,pending_renewal,400,380,Legal,leo.n@legaledge.com,wire_transfer,FALSE,2025-01-01,25000,premium,2024-03-05,"SSO, Custom Reports"
+SUB-10013,MedCore Systems,Enterprise,32000,384000,2024-01-01,2025-01-01,active,1200,1100,Healthcare,mia.v@medcore.com,wire_transfer,TRUE,2025-02-01,0,premium,2024-01-05,"HIPAA Compliance, SSO, API Access, Custom Reports, Dedicated Instance"
+SUB-10014,NovaStar Media,Professional,4000,48000,2023-06-01,2024-06-01,churned,50,18,Media,noah.f@novastar.com,credit_card,FALSE,2024-05-01,0,standard,2023-06-05,
+SUB-10015,OrbitCloud,Basic,750,9000,2024-05-01,2025-05-01,active,15,12,Technology,olivia.g@orbitcloud.com,credit_card,TRUE,2025-02-01,0,basic,2024-05-05,
